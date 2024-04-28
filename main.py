@@ -15,11 +15,14 @@ class TicTacToe:
     current_player: str = 'o'
     window_width: int
     window_height: int
-    clock: pygame.time.Clock = pygame.time.Clock()
     window: pygame.Surface
     grid: list[Cell] = []
-    def __init__(self):
+    grid_size: int
+    currect_hovered_cell: Cell
+    def __init__(self, size: int):
         self.__init_window()
+        self.grid_size = size
+        self.__create_grid()
     
     def __init_window(self):
         window_background_colour = (18, 18, 18)
@@ -30,51 +33,52 @@ class TicTacToe:
         self.window.fill(window_background_colour)
         pygame.display.flip()
     
-    def draw_grid(self, size: int):
-        self.__create_grid(size)
+    def draw_grid(self):
         for cell in self.grid:
-            pygame.draw.rect(self.window, cell.background_colour, cell.rect)
+            self.__draw_cell(cell)
+            self.__cell_hover(cell)
             if cell.occupied_by == 'x':
                 self.__draw_x(cell)
             if cell.occupied_by == 'o':
                 self.__draw_o(cell)
-        self.__cell_hover()
     
     def place_sign(self):
-        for cell in self.grid:
-            if cell.is_occupied:
-                break
-            if cell.rect.collidepoint(pygame.mouse.get_pos()):
-                cell.is_occupied = True
-                cell.occupied_by = self.current_player
-                if self.current_player == 'x':
-                    self.current_player = 'o'
-                else:
-                    self.current_player = 'x'
+        if not self.currect_hovered_cell.is_occupied:
+            self.currect_hovered_cell.is_occupied = True
+            self.currect_hovered_cell.occupied_by = self.current_player
+            self.__swap_player()
+        
+    def __swap_player(self):
+        if self.current_player == 'x':
+            self.current_player = 'o'
+        elif self.current_player == 'o':
+            self.current_player = 'x'
     
-    def __create_grid(self, size: int):
+    def __create_grid(self):
         padding = 10
-        grid_size = 600
-        cell_size = grid_size / size
-        for x in range(size):
-            for y in range(size):
-                rect_x = self.window_width/2 - grid_size/2 + cell_size*x
-                rect_y = self.window_height/2 - grid_size/2 + cell_size*y
+        grid_size_px = 600
+        cell_size = grid_size_px / self.grid_size
+        for x in range(self.grid_size):
+            for y in range(self.grid_size):
+                rect_x = self.window_width/2 - grid_size_px/2 + cell_size*x
+                rect_y = self.window_height/2 - grid_size_px/2 + cell_size*y
                 rect_size = cell_size - padding
                 rect = pygame.Rect(rect_x, rect_y, rect_size, rect_size)
                 self.grid.append(Cell(rect))
         
         
-    def __cell_hover(self):
-        for cell in self.grid:
-            if cell.is_occupied:
-                break
-            if self.current_player == 'o':
-                if cell.rect.collidepoint(pygame.mouse.get_pos()):
-                     self.__draw_o(cell)
-            if self.current_player == 'x':
-                if cell.rect.collidepoint(pygame.mouse.get_pos()):
-                   self.__draw_x(cell)
+    def __cell_hover(self, cell: Cell):
+        if cell.rect.collidepoint(pygame.mouse.get_pos()):
+            self.currect_hovered_cell = cell
+        if cell.is_occupied:
+            return
+        if self.current_player == 'o':
+            if cell.rect.collidepoint(pygame.mouse.get_pos()):
+                self.__draw_o(cell)
+        if self.current_player == 'x':
+            if cell.rect.collidepoint(pygame.mouse.get_pos()):
+                self.__draw_x(cell)
+               
     
     def __draw_x(self, cell: Cell):
         a = cell.rect.width/5
@@ -83,21 +87,22 @@ class TicTacToe:
     
     def __draw_o(self, cell: Cell):
         pygame.draw.circle(self.window, cell.sign_color, (cell.rect.left + cell.rect.width/2, cell.rect.top + cell.rect.height/2), cell.rect.width/3.2, int(cell.rect.width/14))
-        
-
-        
+    
+    def __draw_cell(self, cell: Cell):
+        pygame.draw.rect(self.window, cell.background_colour, cell.rect)
+            
 
 def main():
-    game = TicTacToe()
+    game = TicTacToe(3)
     running = True
     while running:
-        game.draw_grid(3)
+        game.draw_grid()
         for event in pygame.event.get():
             if event.type == pygame.QUIT: 
                 running = False
-            elif event.type == pygame.MOUSEBUTTONUP:
-                game.place_sign()
-        game.clock.tick(30)
+            if event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1: # 1 == left button
+                    game.place_sign()
         pygame.display.update()
 
 
