@@ -1,4 +1,45 @@
 import pygame
+import sys
+
+class Button():
+    def __init__(self, window, x, y, width, height, buttonText='Button', onclickFunction=None, onePress=False):
+        self.window = window
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.onclickFunction = onclickFunction
+        self.onePress = onePress
+        self.alreadyPressed = False
+        self.font = pygame.font.SysFont('Arial', 25)
+        self.fillColors = {
+            'normal': '#ffffff',
+            'hover': '#666666',
+            'pressed': '#333333',
+        }
+        self.buttonSurface = pygame.Surface((self.width, self.height))
+        self.buttonRect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.buttonSurf = self.font.render(buttonText, True, (20, 20, 20))
+
+    def process(self):
+        mousePos = pygame.mouse.get_pos()
+        self.buttonSurface.fill(self.fillColors['normal'])
+        if self.buttonRect.collidepoint(mousePos):
+            self.buttonSurface.fill(self.fillColors['hover'])
+            if pygame.mouse.get_pressed(num_buttons=3)[0]:
+                self.buttonSurface.fill(self.fillColors['pressed'])
+                if self.onePress:
+                    self.onclickFunction()
+                elif not self.alreadyPressed:
+                    self.onclickFunction()
+                    self.alreadyPressed = True
+            else:
+                self.alreadyPressed = False
+        self.buttonSurface.blit(self.buttonSurf, [
+        self.buttonRect.width/2 - self.buttonSurf.get_rect().width/2,
+        self.buttonRect.height/2 - self.buttonSurf.get_rect().height/2
+        ])
+        self.window.blit(self.buttonSurface, self.buttonRect)
 
 class WinningLine:
     color = (1, 100, 32)
@@ -19,6 +60,7 @@ class Cell:
         self.id = id
 
 class TicTacToe:
+    running: bool = True
     current_player: str = 'o'
     window_width: int
     window_height: int
@@ -26,44 +68,82 @@ class TicTacToe:
     grid: list[list[Cell]] = []
     grid_size: int
     grid_size_px: int = 600
-    current_hovered_cell: Cell
+    current_hovered_cell: Cell = None
     winning_line: WinningLine = None
+    is_game_finished: bool = False
     def __init__(self, size: int):
         self.__init_window()
         self.grid_size = size
         self.__create_grid()
     
     def __init_window(self):
-        window_background_colour = (18, 18, 18)
+        pygame.init()
+        self.window_background_colour = (18, 18, 18)
         ratio = 80
         self.window_width, self.window_height = 16*ratio, 9*ratio
         self.window = pygame.display.set_mode((self.window_width, self.window_height))
         pygame.display.set_caption('TicTacToe')
-        self.window.fill(window_background_colour)
+        self.window.fill(self.window_background_colour)
         pygame.display.flip()
     
     def draw_grid(self):
-        for row in self.grid:
-            for cell in row:    
-                self.__draw_cell(cell)
-                self.__cell_hover(cell)
-                if cell.occupied_by == 'x':
-                    self.__draw_x(cell)
-                if cell.occupied_by == 'o':
-                    self.__draw_o(cell)
-        if self.winning_line is not None:
-            self.__draw_line()
+        Button(self.window, 1100, 60, 100, 50, buttonText='Restart', onclickFunction=self.restart_game).process()
+        if not self.is_game_finished:
+            for row in self.grid:
+                for cell in row:    
+                    self.__draw_cell(cell)
+                    self.__cell_hover(cell)
+                    if cell.occupied_by == 'x':
+                        self.__draw_x(cell)
+                    if cell.occupied_by == 'o':
+                        self.__draw_o(cell)
+            if self.winning_line is not None:
+                self.__draw_line()
+                self.is_game_finished = True
             
     def place_sign(self):
-        if not self.current_hovered_cell.is_occupied:
-            self.current_hovered_cell.is_occupied = True
-            self.current_hovered_cell.occupied_by = self.current_player
-            self.__check_for_win()
-            self.__swap_player()
+        if self.current_hovered_cell is not None:
+            if not self.current_hovered_cell.is_occupied:
+                self.current_hovered_cell.is_occupied = True
+                self.current_hovered_cell.occupied_by = self.current_player
+                self.__check_for_win()
+                self.__swap_player()
+    
+    def restart_game(self):
+        self.is_game_finished = False
+        self.winning_line: WinningLine = None
+        self.window.fill(self.window_background_colour)
+        self.grid = []
+        self.__create_grid()
     
     def __check_for_win(self):
         self.__check_horizontal(self.current_hovered_cell)
         self.__check_vertical(self.current_hovered_cell)
+        self.__check_diagonals()
+    
+    def __check_diagonals(self):
+        # Top left to bottom right
+        counter = 0
+        for i in range(self.grid_size):
+            if self.grid[0 + i][0 + i].occupied_by == self.current_player:
+                counter += 1
+        if counter == self.grid_size:
+            padding = self.grid[0][0].rect.width/6
+            line_width = int(self.grid[0][0].rect.width/15)
+            line_start_pos = (self.grid[0][0].rect.topleft[0] + padding, self.grid[0][0].rect.topleft[1] + padding)
+            line_end_pos = (self.grid[self.grid_size - 1][self.grid_size - 1].rect.bottomright[0] - padding, self.grid[self.grid_size - 1][self.grid_size - 1].rect.bottomright[1] - padding)
+            self.winning_line = WinningLine(line_start_pos, line_end_pos, line_width)
+        # Bottom left to top right
+        counter = 0
+        for i in range(self.grid_size):
+            if self.grid[0 + i][self.grid_size - 1 - i].occupied_by == self.current_player:
+                counter += 1
+        if counter == self.grid_size:
+            padding = self.grid[0][0].rect.width/6
+            line_width = int(self.grid[0][0].rect.width/15)
+            line_start_pos = (self.grid[0][self.grid_size - 1].rect.bottomleft[0] + padding, self.grid[0][self.grid_size - 1].rect.bottomleft[1] - padding)
+            line_end_pos = (self.grid[self.grid_size - 1][0].rect.topright[0] - padding, self.grid[self.grid_size - 1][0].rect.topright[1] + padding)
+            self.winning_line = WinningLine(line_start_pos, line_end_pos, line_width)
     
     def __check_vertical(self, cell: Cell):
         counter = 0
@@ -142,20 +222,17 @@ class TicTacToe:
     def __draw_cell(self, cell: Cell):
         pygame.draw.rect(self.window, cell.background_colour, cell.rect)
             
-
 def main():
     game = TicTacToe(3)
-    running = True
-    while running:
+    while game.running:
         game.draw_grid()
         for event in pygame.event.get():
             if event.type == pygame.QUIT: 
-                running = False
+                game.running = False
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1: # 1 == left button
                     game.place_sign()
         pygame.display.update()
-
 
 if __name__ == '__main__':
     main()
