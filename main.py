@@ -1,5 +1,4 @@
 import pygame
-import sys
 
 class Button():
     def __init__(self, window, x, y, width, height, buttonText='Button', onclickFunction=None, onePress=False):
@@ -19,7 +18,7 @@ class Button():
         }
         self.buttonSurface = pygame.Surface((self.width, self.height))
         self.buttonRect = pygame.Rect(self.x, self.y, self.width, self.height)
-        self.buttonSurf = self.font.render(buttonText, True, (20, 20, 20))
+        self.buttonSurf = self.font.render(buttonText, True, (18, 18, 18))
 
     def process(self):
         mousePos = pygame.mouse.get_pos()
@@ -87,7 +86,13 @@ class TicTacToe:
         pygame.display.flip()
     
     def draw_grid(self):
-        Button(self.window, 1100, 60, 100, 50, buttonText='Restart', onclickFunction=self.restart_game).process()
+        Button(self.window, 1100, 60, 110, 50, buttonText='Restart', onclickFunction=self.restart_game).process()
+        Button(self.window, 1100, 120, 50, 50, buttonText='3x3', onclickFunction= lambda: self.__change_grid_size(3)).process()
+        Button(self.window, 1100, 180, 50, 50, buttonText='4x4', onclickFunction= lambda: self.__change_grid_size(4)).process()
+        Button(self.window, 1160, 120, 50, 50, buttonText='5x5', onclickFunction= lambda: self.__change_grid_size(5)).process()
+        Button(self.window, 1160, 180, 50, 50, buttonText='6x6', onclickFunction= lambda: self.__change_grid_size(6)).process()
+        Button(self.window, 1100, 600, 110, 50, buttonText='Quit', onclickFunction=self.__quit).process()
+        
         if not self.is_game_finished:
             for row in self.grid:
                 for cell in row:    
@@ -115,6 +120,13 @@ class TicTacToe:
         self.window.fill(self.window_background_colour)
         self.grid = []
         self.__create_grid()
+    
+    def __change_grid_size(self, new_size: int):
+        self.grid_size = new_size
+        self.restart_game()
+        
+    def __quit(self):
+        self.running = False
     
     def __check_for_win(self):
         self.__check_horizontal(self.current_hovered_cell)
