@@ -1,44 +1,66 @@
 import pygame
 
-class Button():
-    def __init__(self, window, x, y, width, height, buttonText='Button', onclickFunction=None, onePress=False):
+class Text():
+    def __init__(self, window: pygame.Surface, x: int, y: int, width: int, height: int, text: str, text_size: str = 25):
         self.window = window
         self.x = x
         self.y = y
         self.width = width
         self.height = height
-        self.onclickFunction = onclickFunction
-        self.onePress = onePress
-        self.alreadyPressed = False
+        self.text = text
+        self.text_size = text_size
+        self.font = pygame.font.SysFont('Arial', text_size)
+        self.text_backgroud = pygame.Surface((self.width, self.height))
+        self.text_backgroud_rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.text_surface = self.font.render(text, True, (255,255,255))
+
+    def process(self):
+        self.text_backgroud.fill((18, 18, 18, 0))
+        self.text_backgroud.blit(self.text_surface, [
+        self.text_backgroud_rect.width/2 - self.text_surface.get_rect().width/2,
+        self.text_backgroud_rect.height/2 - self.text_surface.get_rect().height/2
+        ])
+        self.window.blit(self.text_backgroud, self.text_backgroud_rect)
+
+class Button():
+    def __init__(self, window, x, y, width, height, button_text='Button', onclick_function=None, one_press=False):
+        self.window = window
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.onclick_function = onclick_function
+        self.one_press = one_press
+        self.already_pressed = False
         self.font = pygame.font.SysFont('Arial', 25)
-        self.fillColors = {
+        self.fill_colors = {
             'normal': '#ffffff',
             'hover': '#666666',
             'pressed': '#333333',
         }
-        self.buttonSurface = pygame.Surface((self.width, self.height))
-        self.buttonRect = pygame.Rect(self.x, self.y, self.width, self.height)
-        self.buttonSurf = self.font.render(buttonText, True, (18, 18, 18))
+        self.button_surface = pygame.Surface((self.width, self.height))
+        self.button_rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.button_surf = self.font.render(button_text, True, (18, 18, 18))
 
     def process(self):
         mousePos = pygame.mouse.get_pos()
-        self.buttonSurface.fill(self.fillColors['normal'])
-        if self.buttonRect.collidepoint(mousePos):
-            self.buttonSurface.fill(self.fillColors['hover'])
+        self.button_surface.fill(self.fill_colors['normal'])
+        if self.button_rect.collidepoint(mousePos):
+            self.button_surface.fill(self.fill_colors['hover'])
             if pygame.mouse.get_pressed(num_buttons=3)[0]:
-                self.buttonSurface.fill(self.fillColors['pressed'])
-                if self.onePress:
-                    self.onclickFunction()
-                elif not self.alreadyPressed:
-                    self.onclickFunction()
-                    self.alreadyPressed = True
+                self.button_surface.fill(self.fill_colors['pressed'])
+                if self.one_press:
+                    self.onclick_function()
+                elif not self.already_pressed:
+                    self.onclick_function()
+                    self.already_pressed = True
             else:
-                self.alreadyPressed = False
-        self.buttonSurface.blit(self.buttonSurf, [
-        self.buttonRect.width/2 - self.buttonSurf.get_rect().width/2,
-        self.buttonRect.height/2 - self.buttonSurf.get_rect().height/2
+                self.already_pressed = False
+        self.button_surface.blit(self.button_surf, [
+        self.button_rect.width/2 - self.button_surf.get_rect().width/2,
+        self.button_rect.height/2 - self.button_surf.get_rect().height/2
         ])
-        self.window.blit(self.buttonSurface, self.buttonRect)
+        self.window.blit(self.button_surface, self.button_rect)
 
 class WinningLine:
     color = (1, 100, 32)
@@ -61,6 +83,8 @@ class Cell:
 class TicTacToe:
     running: bool = True
     current_player: str = 'o'
+    player_o_wins = 0
+    player_x_wins = 0
     window_width: int
     window_height: int
     window: pygame.Surface
@@ -86,13 +110,14 @@ class TicTacToe:
         pygame.display.flip()
     
     def draw_grid(self):
-        Button(self.window, 1100, 60, 110, 50, buttonText='Restart', onclickFunction=self.restart_game).process()
-        Button(self.window, 1100, 120, 50, 50, buttonText='3x3', onclickFunction= lambda: self.__change_grid_size(3)).process()
-        Button(self.window, 1100, 180, 50, 50, buttonText='4x4', onclickFunction= lambda: self.__change_grid_size(4)).process()
-        Button(self.window, 1160, 120, 50, 50, buttonText='5x5', onclickFunction= lambda: self.__change_grid_size(5)).process()
-        Button(self.window, 1160, 180, 50, 50, buttonText='6x6', onclickFunction= lambda: self.__change_grid_size(6)).process()
-        Button(self.window, 1100, 600, 110, 50, buttonText='Quit', onclickFunction=self.__quit).process()
-        
+        Button(self.window, 1100, 60, 110, 50, button_text='Restart', onclick_function=self.restart_game).process()
+        Button(self.window, 1100, 120, 50, 50, button_text='3x3', onclick_function= lambda: self.__change_grid_size(3)).process()
+        Button(self.window, 1100, 180, 50, 50, button_text='4x4', onclick_function= lambda: self.__change_grid_size(4)).process()
+        Button(self.window, 1160, 120, 50, 50, button_text='5x5', onclick_function= lambda: self.__change_grid_size(5)).process()
+        Button(self.window, 1160, 180, 50, 50, button_text='6x6', onclick_function= lambda: self.__change_grid_size(6)).process()
+        Button(self.window, 1100, 600, 110, 50, button_text='Quit', onclick_function=self.__quit).process()
+        Text(self.window, 50, 60, 200, 30, f"Player X wins: {self.player_x_wins}").process()
+        Text(self.window, 50, 100, 200, 30, f"Player O wins: {self.player_o_wins}").process()
         if not self.is_game_finished:
             for row in self.grid:
                 for cell in row:    
@@ -105,6 +130,9 @@ class TicTacToe:
             if self.winning_line is not None:
                 self.__draw_line()
                 self.is_game_finished = True
+                self.__add_win()
+        else:
+            Text(self.window, self.grid[-1][-1].rect.bottomright[0]/2, self.grid[-1][-1].rect.bottomright[1]/2, 350, 50, f"GAME OVER!", 50).process()
             
     def place_sign(self):
         if self.current_hovered_cell is not None:
@@ -114,9 +142,18 @@ class TicTacToe:
                 self.__check_for_win()
                 self.__swap_player()
     
+    def __is_grid_full(self):
+        counter = 0
+        for row in self.grid:
+            for cell in row:
+                if cell.is_occupied:
+                    counter += 1
+        if counter == self.grid_size ** 2:
+            self.is_game_finished = True
+    
     def restart_game(self):
         self.is_game_finished = False
-        self.winning_line: WinningLine = None
+        self.winning_line = None
         self.window.fill(self.window_background_colour)
         self.grid = []
         self.__create_grid()
@@ -125,6 +162,12 @@ class TicTacToe:
         self.grid_size = new_size
         self.restart_game()
         
+    def __add_win(self):
+        if self.current_player == 'o':
+            self.player_x_wins += 1
+        if self.current_player == 'x':
+            self.player_o_wins += 1
+        
     def __quit(self):
         self.running = False
     
@@ -132,6 +175,7 @@ class TicTacToe:
         self.__check_horizontal(self.current_hovered_cell)
         self.__check_vertical(self.current_hovered_cell)
         self.__check_diagonals()
+        self.__is_grid_full()
     
     def __check_diagonals(self):
         # Top left to bottom right
