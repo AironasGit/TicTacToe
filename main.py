@@ -94,6 +94,7 @@ class TicTacToe:
     current_hovered_cell: Cell = None
     winning_line: WinningLine = None
     is_game_finished: bool = False
+    is_grid_full: bool = False
     def __init__(self, size: int):
         self.__init_window()
         self.grid_size = size
@@ -128,12 +129,14 @@ class TicTacToe:
                     if cell.occupied_by == 'o':
                         self.__draw_o(cell)
             if self.winning_line is not None:
-                self.__draw_line()
-                self.is_game_finished = True
-                self.__add_win()
+                    self.__draw_line()
+                    self.is_game_finished = True
+                    self.__add_win()
+            if self.is_grid_full:
+                Text(self.window, self.grid[-1][-1].rect.bottomright[0]/2, self.grid[-1][-1].rect.bottomright[1]/2, 350, 50, f"GAME OVER!", 50).process()
         else:
             Text(self.window, self.grid[-1][-1].rect.bottomright[0]/2, self.grid[-1][-1].rect.bottomright[1]/2, 350, 50, f"GAME OVER!", 50).process()
-            
+                
     def place_sign(self):
         if self.current_hovered_cell is not None:
             if not self.current_hovered_cell.is_occupied:
@@ -149,10 +152,11 @@ class TicTacToe:
                 if cell.is_occupied:
                     counter += 1
         if counter == self.grid_size ** 2:
-            self.is_game_finished = True
+            self.is_grid_full = True
     
     def restart_game(self):
         self.is_game_finished = False
+        self.is_grid_full = False
         self.winning_line = None
         self.window.fill(self.window_background_colour)
         self.grid = []
