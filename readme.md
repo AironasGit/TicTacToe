@@ -1,1 +1,1 @@
-![GameExample!](Images/GameExample.png)
+![GameExample!](GameExample.PNG)
