@@ -73,7 +73,6 @@ class Cell:
     id: tuple[int, int]
     rect: pygame.Rect
     background_colour = (128, 128, 128)
-    sign_color = (27, 27, 27)
     is_occupied: bool = False
     occupied_by: str = ''
     def __init__(self, rect: pygame.Rect, id: tuple[int, int]):
@@ -113,9 +112,9 @@ class TicTacToe:
     def draw_grid(self):
         Button(self.window, 1100, 60, 110, 50, button_text='Restart', onclick_function=self.restart_game).process()
         Button(self.window, 1100, 120, 50, 50, button_text='3x3', onclick_function= lambda: self.__change_grid_size(3)).process()
-        Button(self.window, 1100, 180, 50, 50, button_text='4x4', onclick_function= lambda: self.__change_grid_size(4)).process()
-        Button(self.window, 1160, 120, 50, 50, button_text='5x5', onclick_function= lambda: self.__change_grid_size(5)).process()
-        Button(self.window, 1160, 180, 50, 50, button_text='6x6', onclick_function= lambda: self.__change_grid_size(6)).process()
+        Button(self.window, 1100, 180, 50, 50, button_text='5x5', onclick_function= lambda: self.__change_grid_size(5)).process()
+        Button(self.window, 1160, 120, 50, 50, button_text='7x7', onclick_function= lambda: self.__change_grid_size(7)).process()
+        Button(self.window, 1160, 180, 50, 50, button_text='9x9', onclick_function= lambda: self.__change_grid_size(9)).process()
         Button(self.window, 1100, 600, 110, 50, button_text='Quit', onclick_function=self.__quit).process()
         Text(self.window, 50, 60, 200, 30, f"Player X wins: {self.player_x_wins}").process()
         Text(self.window, 50, 100, 200, 30, f"Player O wins: {self.player_o_wins}").process()
@@ -158,6 +157,7 @@ class TicTacToe:
         self.is_game_finished = False
         self.is_grid_full = False
         self.winning_line = None
+        self.current_hovered_cell = None
         self.window.fill(self.window_background_colour)
         self.grid = []
         self.__create_grid()
@@ -178,32 +178,34 @@ class TicTacToe:
     def __check_for_win(self):
         self.__check_horizontal(self.current_hovered_cell)
         self.__check_vertical(self.current_hovered_cell)
-        self.__check_diagonals()
+        self.__check_diagonals(self.current_hovered_cell)
         self.__is_grid_full()
     
-    def __check_diagonals(self):
+    def __check_diagonals(self, cell: Cell):
         # Top left to bottom right
-        counter = 0
-        for i in range(self.grid_size):
-            if self.grid[0 + i][0 + i].occupied_by == self.current_player:
-                counter += 1
-        if counter == self.grid_size:
-            padding = self.grid[0][0].rect.width/6
-            line_width = int(self.grid[0][0].rect.width/15)
-            line_start_pos = (self.grid[0][0].rect.topleft[0] + padding, self.grid[0][0].rect.topleft[1] + padding)
-            line_end_pos = (self.grid[self.grid_size - 1][self.grid_size - 1].rect.bottomright[0] - padding, self.grid[self.grid_size - 1][self.grid_size - 1].rect.bottomright[1] - padding)
-            self.winning_line = WinningLine(line_start_pos, line_end_pos, line_width)
+        if cell.id[0] == cell.id[1]:
+            counter = 0
+            for i in range(self.grid_size):
+                if self.grid[i][i].occupied_by == self.current_player:
+                    counter += 1
+            if counter == self.grid_size:
+                padding = self.grid[0][0].rect.width/6
+                line_width = int(self.grid[0][0].rect.width/15)
+                line_start_pos = (self.grid[0][0].rect.topleft[0] + padding, self.grid[0][0].rect.topleft[1] + padding)
+                line_end_pos = (self.grid[self.grid_size - 1][self.grid_size - 1].rect.bottomright[0] - padding, self.grid[self.grid_size - 1][self.grid_size - 1].rect.bottomright[1] - padding)
+                self.winning_line = WinningLine(line_start_pos, line_end_pos, line_width)
         # Bottom left to top right
-        counter = 0
-        for i in range(self.grid_size):
-            if self.grid[0 + i][self.grid_size - 1 - i].occupied_by == self.current_player:
-                counter += 1
-        if counter == self.grid_size:
-            padding = self.grid[0][0].rect.width/6
-            line_width = int(self.grid[0][0].rect.width/15)
-            line_start_pos = (self.grid[0][self.grid_size - 1].rect.bottomleft[0] + padding, self.grid[0][self.grid_size - 1].rect.bottomleft[1] - padding)
-            line_end_pos = (self.grid[self.grid_size - 1][0].rect.topright[0] - padding, self.grid[self.grid_size - 1][0].rect.topright[1] + padding)
-            self.winning_line = WinningLine(line_start_pos, line_end_pos, line_width)
+        if cell.id[0] + cell.id[1] == self.grid_size - 1:
+            counter = 0
+            for i in range(self.grid_size):
+                if self.grid[0 + i][self.grid_size - 1 - i].occupied_by == self.current_player:
+                    counter += 1
+            if counter == self.grid_size:
+                padding = self.grid[0][0].rect.width/6
+                line_width = int(self.grid[0][0].rect.width/15)
+                line_start_pos = (self.grid[0][self.grid_size - 1].rect.bottomleft[0] + padding, self.grid[0][self.grid_size - 1].rect.bottomleft[1] - padding)
+                line_end_pos = (self.grid[self.grid_size - 1][0].rect.topright[0] - padding, self.grid[self.grid_size - 1][0].rect.topright[1] + padding)
+                self.winning_line = WinningLine(line_start_pos, line_end_pos, line_width)
     
     def __check_vertical(self, cell: Cell):
         counter = 0
@@ -255,26 +257,26 @@ class TicTacToe:
             return
         if self.current_player == 'o':
             if cell.rect.collidepoint(pygame.mouse.get_pos()):
-                self.__draw_o(cell)
+                self.__draw_o(cell, (209, 153, 148))
         if self.current_player == 'x':
             if cell.rect.collidepoint(pygame.mouse.get_pos()):
-                self.__draw_x(cell)
+                self.__draw_x(cell, (129, 141, 199))
                
-    def __draw_x(self, cell: Cell):
+    def __draw_x(self, cell: Cell, color:tuple[int, int, int] = (23, 44, 150)):
         padding = cell.rect.width/5
         line_width = int(cell.rect.width/10)
         line1_start_pos = (cell.rect.topleft[0] + padding, cell.rect.topleft[1] + padding)
         line1_end_pos = (cell.rect.bottomright[0] - padding, cell.rect.bottomright[1] - padding)
-        pygame.draw.line(self.window, cell.sign_color, line1_start_pos, line1_end_pos, line_width)
+        pygame.draw.line(self.window, color, line1_start_pos, line1_end_pos, line_width)
         line2_start_pos = (cell.rect.topright[0] - padding, cell.rect.topright[1] + padding)
         line2_end_pos = (cell.rect.bottomleft[0] + padding, cell.rect.bottomleft[1] - padding)
-        pygame.draw.line(self.window, cell.sign_color, line2_start_pos, line2_end_pos, line_width)
+        pygame.draw.line(self.window, color, line2_start_pos, line2_end_pos, line_width)
     
-    def __draw_o(self, cell: Cell):
+    def __draw_o(self, cell: Cell, color:tuple[int, int, int] = (112, 42, 37)):
         center_coordinate = (cell.rect.left + cell.rect.width/2, cell.rect.top + cell.rect.height/2)
-        radius = cell.rect.width/3.2
+        radius = cell.rect.width/3.14
         width = int(cell.rect.width/14)
-        pygame.draw.circle(self.window, cell.sign_color, center_coordinate, radius, width)
+        pygame.draw.circle(self.window, color, center_coordinate, radius, width)
     
     def __draw_line(self):
         pygame.draw.line(self.window, self.winning_line.color, self.winning_line.start_pos, self.winning_line.end_pos, self.winning_line.width)
